@@ -96,32 +96,32 @@ y <-  x + rnorm(50, mean = 50, sd = 0.1)
 cor(x,y)
 ```
 
-    ## [1] 0.9951189
+    ## [1] 0.9915044
 
 ``` r
 y <-  rnorm(100)
 mean(y)
 ```
 
-    ## [1] 0.08426621
+    ## [1] -0.02985298
 
 ``` r
 var(y)
 ```
 
-    ## [1] 1.103845
+    ## [1] 0.7924268
 
 ``` r
 sqrt(var(y))
 ```
 
-    ## [1] 1.05064
+    ## [1] 0.8901836
 
 ``` r
 sd(y)
 ```
 
-    ## [1] 1.05064
+    ## [1] 0.8901836
 
 ### Criando gráficos com o pacote *graphics* (r base)
 
@@ -441,9 +441,33 @@ print(table)
 <!-- end list -->
 
 ``` r
+library(purrr)
 eucdist <- function(x, y) {
   sqrt(sum((x - y) ^ 2))
-}
+
+  }
+
+eucdist(table[1, 2:4], table[7, 2:4])
+```
+
+    ## [1] 3
+
+``` r
+eucdist(table[2, 2:4], table[7, 2:4])
+```
+
+    ## [1] 2
+
+``` r
+eucdist(table[3, 2:4], table[7, 2:4])
+```
+
+    ## [1] 3.162278
+
+``` r
+# etc
+# Outra saída:
+
 ob0 <- c(0,0,0)
 ob1 <- c(0,3,0)
 ob2 <- c(2,0,0)
@@ -570,10 +594,9 @@ library(tidyverse)
 
     ## ── Attaching packages ──────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
 
-    ## ✔ tibble  2.1.1     ✔ purrr   0.3.2
-    ## ✔ tidyr   0.8.3     ✔ dplyr   0.8.1
-    ## ✔ readr   1.3.1     ✔ stringr 1.4.0
-    ## ✔ tibble  2.1.1     ✔ forcats 0.4.0
+    ## ✔ tibble  2.1.1     ✔ dplyr   0.8.1
+    ## ✔ tidyr   0.8.3     ✔ stringr 1.4.0
+    ## ✔ readr   1.3.1     ✔ forcats 0.4.0
 
     ## ── Conflicts ─────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
@@ -689,37 +712,107 @@ summary(Auto)
     ##  (Other)           :365
 
 ``` r
-sapply(Auto[,1:7], mean)
+meansd <- function(x) {
+  media <- map(x, mean)
+  desvpd <- map(x, sd)
+  print(media)
+  print(desvpd)
+}
+
+meansd(Auto[ ,1:7])
 ```
 
-    ##          mpg    cylinders displacement   horsepower       weight 
-    ##    23.445918     5.471939   194.411990   104.469388  2977.584184 
-    ## acceleration         year 
-    ##    15.541327    75.979592
+    ## $mpg
+    ## [1] 23.44592
+    ## 
+    ## $cylinders
+    ## [1] 5.471939
+    ## 
+    ## $displacement
+    ## [1] 194.412
+    ## 
+    ## $horsepower
+    ## [1] 104.4694
+    ## 
+    ## $weight
+    ## [1] 2977.584
+    ## 
+    ## $acceleration
+    ## [1] 15.54133
+    ## 
+    ## $year
+    ## [1] 75.97959
+    ## 
+    ## $mpg
+    ## [1] 7.805007
+    ## 
+    ## $cylinders
+    ## [1] 1.705783
+    ## 
+    ## $displacement
+    ## [1] 104.644
+    ## 
+    ## $horsepower
+    ## [1] 38.49116
+    ## 
+    ## $weight
+    ## [1] 849.4026
+    ## 
+    ## $acceleration
+    ## [1] 2.758864
+    ## 
+    ## $year
+    ## [1] 3.683737
 
 ``` r
-sapply(Auto[,1:7], sd)
+Auto1085 <- Auto[-(10:85),-(8:9)]
+
+meansd(Auto1085)
 ```
 
-    ##          mpg    cylinders displacement   horsepower       weight 
-    ##     7.805007     1.705783   104.644004    38.491160   849.402560 
-    ## acceleration         year 
-    ##     2.758864     3.683737
+    ## $mpg
+    ## [1] 24.40443
+    ## 
+    ## $cylinders
+    ## [1] 5.373418
+    ## 
+    ## $displacement
+    ## [1] 187.2405
+    ## 
+    ## $horsepower
+    ## [1] 100.7215
+    ## 
+    ## $weight
+    ## [1] 2935.972
+    ## 
+    ## $acceleration
+    ## [1] 15.7269
+    ## 
+    ## $year
+    ## [1] 77.14557
+    ## 
+    ## $mpg
+    ## [1] 7.867283
+    ## 
+    ## $cylinders
+    ## [1] 1.654179
+    ## 
+    ## $displacement
+    ## [1] 99.67837
+    ## 
+    ## $horsepower
+    ## [1] 35.70885
+    ## 
+    ## $weight
+    ## [1] 811.3002
+    ## 
+    ## $acceleration
+    ## [1] 2.693721
+    ## 
+    ## $year
+    ## [1] 3.106217
 
 ``` r
-# Minha função está dando erro, não sei porque
-# meansd <- function(x) {
-#   media <- map(x, mean)
-#   desvpd <- map(x, sd)
-#   tibble(media, desvpd)
-# }
-# 
-# meansd(Auto[ ,1:7])
-
-Auto1085 <- Auto[-(10:85),]
-
-# meansd(Auto1085)
-
 pairs(Auto[,1:7])
 ```
 
