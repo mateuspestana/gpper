@@ -96,32 +96,32 @@ y <-  x + rnorm(50, mean = 50, sd = 0.1)
 cor(x,y)
 ```
 
-    ## [1] 0.9915044
+    ## [1] 0.9971791
 
 ``` r
 y <-  rnorm(100)
 mean(y)
 ```
 
-    ## [1] -0.02985298
+    ## [1] -0.06875988
 
 ``` r
 var(y)
 ```
 
-    ## [1] 0.7924268
+    ## [1] 1.029808
 
 ``` r
 sqrt(var(y))
 ```
 
-    ## [1] 0.8901836
+    ## [1] 1.014795
 
 ``` r
 sd(y)
 ```
 
-    ## [1] 0.8901836
+    ## [1] 1.014795
 
 ### Criando gráficos com o pacote *graphics* (r base)
 
@@ -592,13 +592,13 @@ Criando variável Elite
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ──────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ──────────────────────── tidyverse 1.2.1 ──
 
-    ## ✔ tibble  2.1.1     ✔ dplyr   0.8.1
+    ## ✔ tibble  2.1.3     ✔ dplyr   0.8.1
     ## ✔ tidyr   0.8.3     ✔ stringr 1.4.0
     ## ✔ readr   1.3.1     ✔ forcats 0.4.0
 
-    ## ── Conflicts ─────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ─────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 

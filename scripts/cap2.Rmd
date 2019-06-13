@@ -1,0 +1,289 @@
+---
+title: "Capítulo 2 - Statistical Learning"
+author: "Mateus C. Pestana"
+output: github_document
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 2.3 Lab: Introduction to R
+
+### Comandos básicos
+
+
+#### Dando input usando <-
+```{r setinha}
+x <- c(1,3,2,5)
+x 
+```
+
+#### Dando input usando =
+```{r igual}
+x = c(1,6,2)
+x
+y = c(1,4,3)
+y
+```
+
+#### Somando os objetos:
+```{r somaxy}
+x + y
+```
+
+#### Listando e removendo os objetos criados:
+```{r rmls}
+ls()
+rm(x, y)
+ls()
+```
+
+#### Pedindo ajuda do pacote **matrix**
+```{r helpmatrix}
+?matrix
+```
+
+_**Comentário**: Acho que criar matrizes é mais interessante usando a função *frame_matrix()* do pacote *tibble* do *Tidyverse*. A criação da mesma matriz da página 44
+do livro se daria de uma forma mais legível:_
+
+```{r frame_matrix}
+x <- tibble::frame_matrix(
+  ~",1", ~",2",
+      1,     3,
+      2,     4
+  )
+```
+
+#### Funções estatísticas:
+```{r statistics}
+sqrt(x) 
+x^2 
+x <-  rnorm(50) 
+y <-  x + rnorm(50, mean = 50, sd = 0.1) 
+cor(x,y)
+y <-  rnorm(100)
+mean(y)
+var(y)
+sqrt(var(y))
+sd(y)
+```
+
+### Criando gráficos com o pacote *graphics* (r base)
+
+Para fazer gráficos, acho o *ggplot** mais intuitivo, apesar de que, nesse caso do livro, é mais fácil digitar *plot(x,y)*:
+
+```{r plot}
+set.seed(666)
+x <-  rnorm(100)
+y <- rnorm(100)
+plot(x,y, xlab = "Eixo X", ylab = "Eixo Y", main = "Título")
+```
+
+Criando um gráfico de contorno e um heatmap: 
+```{r contour}
+x <- seq(-pi, pi, length=50)
+y <-  x 
+f <-  outer(x, y, function(x, y)cos(y)/1+x^2)
+contour(x, y, f)
+contour(x, y, f, nlevels=45, add = T)
+fa <- (f-t(f))/2
+contour(x, y, fa, nlevels = 15)
+
+image(x,y,fa)
+persp(x, y, fa, theta = 30, phi = 40)
+
+```
+
+### Indexação de dados: 
+
+Selecionando, na segunda linha, o terceiro elemento de uma matriz:
+```{r matrixA}
+A <- matrix(1:16, 4, 4)
+A
+A[2,3]
+```
+Lembrar que dentro de [ ] o primeiro número se refere à linha e o segundo à coluna
+Também é possível selecionar um conjunto de itens
+```{r matrixAvetor}
+A[c(1,3), c(2,4)]
+A[1:3, 2:4]
+A[1:2, ]
+A[, 1:2]
+```
+
+### Bancos
+
+#### O dataframe "Auto"
+
+O livro sugere o *read.table*, mas o pacote *rio* permite importação de vários formatos sem grandes esforços. Ao invés de *fix* para ver o banco, o comando *View()* do RStudio é mais atual.
+```{r riopack}
+Auto <- read.table("Auto.data", header = T, na.strings = "?")
+head(Auto)
+dim(Auto)
+Auto[1:4, ]
+Auto <- na.omit(Auto)
+dim(Auto)
+names(Auto)
+```
+
+Plotando:
+
+```{r plotauto}
+plot(Auto$cylinders, Auto$mpg)
+Auto$cylinders <- as.factor(Auto$cylinders)
+plot(Auto$cylinders, Auto$mpg, col = "red", varwidth = T, xlab = "Cilindros", ylab = "Milhas por galão")
+hist(Auto$mpg, col = 2, breaks = 15)
+pairs(~Auto$mpg + Auto$displacement + Auto$horsepower + Auto$weight + Auto$acceleration, Auto)
+```
+
+Função *summary*:
+```{r summary}
+summary(Auto)
+summary(Auto$mpg)
+```
+
+
+## Exercícios
+
+### Conceituais
+1. Método flexível de aprendizagem: melhor ou pior?
+  * Melhor, pois com muitas observações e poucas variáveis limitamos o modelo. 
+  * Pior, pois com muitas variáveis (preditores) e poucas observações, a variância seria enorme, gerando o que ele chamou de *overfitting* (p. 22)
+  * Melhor, pois quando é linear, muitos pressupostos são requeridos, o que torna o modelo muito restrito e pouco flexível. 
+  * Pior, pois uma variância enorme gera o mesmo problema observado em b. 
+  
+2. Explicar se fazemos: uma regressão ou classificação, uma predição ou inferência, e dizer *n* (tamanho da amostra) e *p* (número de preditores), em cada caso.
+  * Regressão. Inferência. *n* = 500, *p* = 3.
+  * Classificação. Predição. *n* = 20, *p* = 13.
+  * Regressão. Predição. *n* = 52, *p* = 3. 
+  
+3. Depois.
+
+4. Aplicações na vida real: 
+  * Sucesso ou falha em projetos de crowdfunding na internet
+    * Preditores: tipo de projeto (produto, serviço, etc); tempo para somar os recursos; valor mínimo e máximo; variedade de valores;
+    * Ambos. Entender o que define o sucesso de um projeto de crowdfunding permite planejar melhor os próximos, podendo prever a situação de novos possíveis projetos
+  * Reeleição de incumbente para o governo do estado
+    * Preditores: pertencer ao partido do presidente; taxa de desemprego no estado; diminuição de impostos no período anterior
+    * Predição
+  * Sugestão de filmes da Netflix
+    * Preditores: filmes assistidos anteriormente; idade e sexo do usuário
+    * Ambos. 
+
+5. Modelos mais flexíveis x modelos menos flexíveis:
+  * Vantagem: Se adapta melhor aos dados 
+  * Desvantagem: Dificuldade de interpretar
+
+6. Nos modelos paramétricos, a forma dos dados é assumida, e um modelo escolhido para tal forma. Nos não-paramétricos, tal forma não é assumida. 
+
+7. Tabela pro KNN: 
+```{r knntable}
+table <- tibble::tibble("Obs" = c(1, 2, 3, 4, 5, 6,0), "X1" = c(0,2,0,0,-1,1,0), "X2" = c(3,0,1,1,0,1,0), "X3" = c(0,0,3,2,1,1,0), "Y" = c("Red","Red","Red", "Green", "Green", "Red", " "))
+print(table)
+```
+
+  * Calculando a distância euclidiana:
+
+```{r euclidesdist}
+library(purrr)
+eucdist <- function(x, y) {
+  sqrt(sum((x - y) ^ 2))
+
+  }
+
+eucdist(table[1, 2:4], table[7, 2:4])
+eucdist(table[2, 2:4], table[7, 2:4])
+eucdist(table[3, 2:4], table[7, 2:4])
+# etc
+# Outra saída:
+
+ob0 <- c(0,0,0)
+ob1 <- c(0,3,0)
+ob2 <- c(2,0,0)
+ob3 <- c(0,1,3)
+ob4 <- c(0,1,2)
+ob5 <- c(-1,0,1)
+ob6 <- c(1,1,1)
+
+eucdist(ob1, ob0)
+eucdist(ob2, ob0)
+eucdist(ob3, ob0)
+eucdist(ob4, ob0)
+eucdist(ob5, ob0)
+eucdist(ob6, ob0)
+```
+
+  * K = 1, 5ª observação (-1,0,1) de distância 1.41 do 0,0,0, sendo então predita como Verde.
+  * K = 3, 5ª, 6ª e 2ª observações. Predição vermelha. 
+  * K tem que ser menor 
+  
+
+### Aplicados
+
+8. Ler o banco College.csv e corrigir como solicitado
+```{r collegecsv}
+library(ISLR)
+library(ggplot2)
+data(College)
+dplyr::glimpse(College)
+pairs(College[,1:10])
+ggplot(College, aes(x = Private, y = Outstate, fill = Private))+
+  geom_boxplot(show.legend = F)+
+  labs(title = "Boxplot Private - Outstate",
+       x = "Privada",
+       y = "Fora do Estado",
+       caption = "Fonte: Pacote ISLR")
+
+```
+
+Criando variável Elite
+```{r elitevar}
+library(tidyverse)
+Elite <- rep("No", nrow(College))
+Elite[College$Top10perc>50] <- "Yes"
+College <- data.frame(College, Elite)
+summary(College)
+
+ggplot(College, aes(x = Elite, y = Outstate, fill = Elite ))+
+  geom_boxplot()
+
+ggplot(College, aes(x = Expend))+
+  geom_histogram(fill = "orange", bins = 50)
+```
+
+9. Usar o banco Auto, disponível tanto no repositório do github quanto no pacote ISLR
+```{r autodf}
+library(ISLR)
+data(Auto)
+glimpse(Auto)
+
+summary(Auto)
+
+meansd <- function(x) {
+  media <- map(x, mean)
+  desvpd <- map(x, sd)
+  print(media)
+  print(desvpd)
+}
+
+meansd(Auto[ ,1:7])
+
+Auto1085 <- Auto[-(10:85),-(8:9)]
+
+meansd(Auto1085)
+
+pairs(Auto[,1:7])
+```
+
+10. Usando o banco Boston, disponível no MASS:
+
+```{r mass}
+library(MASS)
+data(Boston)
+dplyr::glimpse(Boston)
+pairs(Boston)
+
+```
+
