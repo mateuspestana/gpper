@@ -1,0 +1,78 @@
+---
+title: "Capítulo 3 - Linear Regression"
+author: "Mateus C. Pestana"
+date: "6/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Lab  
+
+```{r}
+# Carregando os pacotes e os bancos
+pacman::p_load(MASS, ISLR, tidyverse, sjPlot, ggfortify, car)
+options(scipen = 999)
+names(Boston)
+# Criando os modelos 
+mod1 <- lm(medv ~ lstat, Boston)
+summary(mod1)
+attach(Boston)
+```
+
+
+Para ver os dados armazenados dentro de **mod1**, e fazer predições: 
+```{r}
+names(mod1)
+coef(mod1) # Para os coeficientes
+confint(mod1) # Para o intervalo de confiança dos coeficientes
+#residuals(mod1) # Para resíduos
+predict(mod1, data.frame(lstat=c(5, 10, 15)), interval = "prediction")
+```
+
+Agora, plotando ambas as variáveis (**medv** e **lstats**), além de plotar o modelo **mod1**:
+
+```{r}
+# medv x lstats
+Boston %>% 
+  ggplot()+
+  geom_jitter(aes(x = medv, y = lstat))+
+  theme_bw()+
+  labs(title = "medv X lstats",
+       y = "Valor mediano da casa",
+       x = "% de famílias com baixo status econômico")
+
+# plotando mod1
+plot_model(mod1)+
+  theme_bw()
+
+# Diagnósticos
+autoplot(mod1)
+```
+
+
+Agora, para a regressão múltipla (mais coeficientes), gera-se o modelo 2, **mod2**, e o **mod3**, onde todas as 13 variáveis serão incluídas:
+```{r}
+mod2 <- lm(medv ~ lstat + age, data = Boston)
+summary(mod2)
+
+mod3 <- lm(medv ~., data = Boston)
+summary(mod3)
+vif(mod3)
+
+mod3 <- update(mod3,~.-age)
+```
+
+
+Fazendo transformações não-lineares e utilizando **anova** para ver qual o melhor modelo:
+```{r}
+mod4 <- lm(medv ~ lstat +I(lstat^2))
+summary(mod4)
+anova(mod1, mod4)
+plot_model(mod4)
+```
+
+
+# Exercícios
