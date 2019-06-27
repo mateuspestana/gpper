@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Carregando os pacotes e os bancos
-pacman::p_load(MASS, ISLR, tidyverse, sjPlot, ggfortify, car)
+pacman::p_load(MASS, ISLR, tidyverse, sjPlot, ggfortify, car, GGally)
 options(scipen = 999)
 names(Boston)
 # Criando os modelos 
@@ -76,3 +76,92 @@ plot_model(mod4)
 
 
 # Exercícios
+
+### Aplicados
+
+8. Usando o banco _**Auto**_: 
+```{r q8}
+ex8mod <- lm(mpg ~ horsepower, data = Auto)
+summary(ex8mod)
+plot_model(ex8mod)
+autoplot(ex8mod)
+predict(ex8mod, data.frame(horsepower=c(98)), interval="confidence")
+predict(ex8mod, data.frame(horsepower=c(98)), interval="predict")
+```
+
+a) Sobre a regressão:
+  1. sim, há
+  2. forte, pois há um p-valor altamente significativo (menor que 0.001, virtualmente 0), e o $R^2$ é de 0.60
+  3. *horsepower* possui coeficiente negativo ($-0.15$), logo, o aumento de uma unidade em *horsepower* diminui em 0.15  *mpg*
+  4. $24.46$ 
+  
+b) plotado acima
+c) há o problema de não-linearidade (plot de resíduos vs fitted)
+
+9. Ainda sobre o banco _**auto**_:
+```{r q9, warning=FALSE}
+# Matriz de correlação
+Auto %>% 
+  select(-name) %>% 
+  ggpairs(.)
+# Correlações sem name
+Auto %>% 
+  select(-name) %>% 
+  cor()
+
+# modelo com todas as variáveis menos nome
+ex9mod1 <- lm(mpg ~.-name, data = Auto)
+summary(ex9mod1)
+
+# diagnósticos
+autoplot(ex9mod1)
+
+# modelo com interações
+ex9mod2 <-  lm(mpg ~ . * . -name*.+.-name, data = Auto)
+summary(ex9mod2)
+ex9mod3 <- lm(mpg~ -name +displacement*weight + displacement*year + horsepower*acceleration, data = Auto)
+summary(ex9mod3)
+
+# modelo com transformação
+ex9mod4 <-  lm(mpg ~ horsepower + I(log(displacement)), data = Auto)
+summary(ex9mod4)
+```
+
+
+a e b) acima
+c) 
+  1. há relação, com F-statistics maior que 1
+  2. forte (p-valor baixo em displacement, weight, year e origin)
+  3. year mostra que a cada unidade adiciona em ano, mpg aumenta em 0.75
+d) outliers nas obs 326, 327e 323, e high leverage em 32, 39 e 14. 
+e) vários significantes
+f) fazendo log de displacement percebemos significância
+
+10. Agora, usando o banco Carseats:
+```{r q10}
+ex10mod1 <- lm(Sales ~ Urban + Price + US, data = Carseats)
+summary(ex10mod1)
+
+ex10mod2 <- lm(Sales ~ Price + US, data = Carseats)
+summary(ex10mod2)
+
+stargazer::stargazer(ex10mod1, ex10mod2, type = "text")
+anova(ex10mod1, ex10mod2)
+
+autoplot(ex10mod2)
+
+confint(ex10mod2)
+
+```
+
+a) acima
+b)
+  - o fato de ser em localidades urbanas não é significante, logo o coeficiente não é interpretado
+  - a cada unidade adicionada em preço, diminui-se 0.05 em vendas
+  - o fato de ser nos EUA aumenta em 1.20 as vendas
+c) $Sales = 13.04 - 0.02 \times UrbanYes - 0.05 \times Price + 1.20 \times USYes$
+d) Pode-se rejeitar a $H_0$ para Price e USYes dado o p-valor baíxisimo e altamente significante
+e) acima
+f) o R2 Ajustado do segundo modelo é maior que do primeiro, e o RSE do segundo é menor que o do primeiro, logo, o segundo é melhor (ligeiramente)
+g) acima
+h) Sim, high-leverage
