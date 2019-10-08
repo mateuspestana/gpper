@@ -165,3 +165,4 @@ e) acima
 f) o R2 Ajustado do segundo modelo é maior que do primeiro, e o RSE do segundo é menor que o do primeiro, logo, o segundo é melhor (ligeiramente)
 g) acima
 h) Sim, high-leverage
+

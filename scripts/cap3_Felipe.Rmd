@@ -1,0 +1,783 @@
+---
+title: "lab/exercicios_cap3"
+author: "Felipe Albuquerque"
+date: "18 de junho de 2019"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(MASS, tidyverse, ISLR, janitor, formattable, ggthemes, car, stargazer, GGally)
+options(scipen = 999)
+```
+
+# Exercícios
+
+___________________________________________________________________
+# 1.
+
+A hipótese nula indica que o orçamento para Televisão, Jornais e Rádio não impactam as vendas. Em notação: $H_{0}^{1}: \beta_{1} = 0$, $H_{0}^{2}: \beta_{2} = 0$, $H_{0}^{3}: \beta_{3} = 0$. Para TV($\beta_{1}$) e Rádio($\beta_{2}$), podemos rejeitar a hipótese nula. Para jornais($\beta_{3}$), não podemos.
+
+__________________________________________________________________
+# 2.
+
+O KNN (K-nearest-neighbors) é um método de classificação de dados categóricos. Nele, se identifica os valores mais próximos de $x_{0}$ e depois estima a probabilidade de $x_{0}$ ser daquela categoria. O modelo de regressão KNN, da mesma forma, identifica os valores mais próximos de $x_{0}$, e depois estima $f(x_{0})$ como a média das respostas (na training data) entre esses "vizinhos".
+
+___________________________________________________________________________
+# 3.
+
+A função fica $Y = 50 + 20gpa + 0.07iq + 35gender + 0.01gpa*iq - 10gpa*gender$
+
+## a
+
+## b
+
+```{r}
+iq = 110
+gpa = 4
+gender = 1
+
+Y = 50 + 20*gpa + 0.07*iq + 35*gender + 0.01*110*4 - 10*gpa*gender
+Y
+```
+
+
+## c
+
+Falso. O parâmetro da interação só mede a intensidade da interação. Para verificar se há um efeito significativo da interação, devemoz conduzir um teste de hipótese e olhar o p-valor.
+
+___________________________________________________________________
+## 4
+
+## a
+
+A primeira vista, esperamos que a regressão linear tenha um RSS menor, já que a relação entre X e Y é linear.
+
+## b
+
+## c
+
+Aqui acontece o oposto. A regressão polinomial é mais flexível que a linear. Como a relação entre X e Y é não-linear, esperamos portanto um menor RSS com a polinomial.
+
+## d
+
+_____________________________________________________________________
+# 5
+
+$$\hat{y_{i}} =x_{i}\hat{\beta}$$
+e:
+
+$$\hat{\beta} = \frac{\sum_{i=1}^{n}x_{i}y_{i}}{\sum_{i^{'}=1}^{n}x_{i^{'}}^{2}}$$
+Então:
+
+$$\hat{y_{i}} = x_{i}\frac{\sum_{i=1}^{n}x_{i}y_{i}}{\sum_{i^{'}=1}^{n}x_{i^{'}}^{2}}$$
+
+logo:
+
+$$\hat{y_{i}} = \sum_{i=1}^{n}(\frac{x_{i}y_{i} * x_{i}}{\sum_{i^{'}=1}^{n}x_{i^{'}}^{2}})$$
+
+$$\hat{y_{i}} = \sum_{i=1}^{n}(\frac{x_{i} * x_{i}}{\sum_{i^{'}=1}^{n}x_{i^{'}}^{2}}y_{i})$$
+$$a_{i^{'}} = \frac{x_{i}*x_{i}}{\sum_{i^{'}=1}^{n}x_{i^{'}}^{2}}$$
+
+____________________________________________________________________
+# 6
+
+
+____________________________________________________________________
+# 7
+
+____________________________________________________________________
+# 8
+
+## a
+```{r}
+auto = Auto
+lm1 = lm(mpg ~ horsepower, data = auto)
+summary(lm1)
+```
+
+*i* Há uma associação clara entre horsepower e mpg.
+
+*ii* o p valor é menor que $2e^{-16}$, o que indica uma associação forte.
+
+*iii* associação negativa, já que o coeficiente é de $-0.157$.
+
+*iiii* Para horsepower - 98, valor de mpg = 
+
+```{r}
+hpr98 <- data.frame(horsepower=98)
+predict(lm1, hpr98)
+```
+
+Intervalo de confiança:
+
+```{r}
+predict(lm1, hpr98, interval = "confidence")
+```
+
+## b
+
+```{r}
+auto %>% 
+  ggplot(aes(x = horsepower, y = mpg)) + geom_point() + 
+  geom_smooth(method = "lm") +
+  theme_hc()
+```
+
+## c
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm1)
+```
+
+Há uma não-linearidade dos resíduos.
+
+____________________________________
+# 9
+
+## a
+
+```{r, message=FALSE}
+auto %>% 
+  dplyr::select(-name) %>% 
+  GGally::ggpairs()
+```
+
+## b
+
+```{r}
+auto %>%
+  dplyr::select(1:8) %>% 
+  cor()
+```
+
+## c
+
+```{r}
+lm2 <- lm(mpg ~ . -name, data = auto)
+summary(lm2)
+```
+
+*i* Existe
+
+*ii* displacement (0.019896) ; weight (-0.006474); year (0.750773) e origin (1.426141)
+
+*iii* versões mais recentes de carros conseguem consumir menos combustível
+
+## d
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm2)
+```
+
+Os erros estão mais lineares, o que aponta para uma homocedasticidade desejada.
+
+## e
+
+```{r}
+plot(auto$year, auto$horsepower)
+lm3 <- lm(mpg ~ horsepower + year + horsepower*year, data = auto)
+summary(lm3)
+par(mfrow=c(2,2))
+plot(lm3)
+```
+
+## f
+
+```{r}
+lm4 <- lm(mpg ~ weight, data = auto)
+summary(lm4)
+par(mfrow = c(2,2))
+plot(lm4)
+```
+
+```{r}
+lm5 <- lm(mpg ~ log(weight), data = auto)
+summary(lm5)
+par(mfrow = c(2,2))
+plot(lm5)
+```
+
+Normalizando a variável weight, os erros ficam praticamente lineares.
+_____________________________
+# 10
+
+```{r}
+rm(list=ls())
+data = Carseats
+```
+
+## a
+
+```{r}
+lm1 <- lm(Sales ~ Population + Urban + US, data = data)
+summary(lm1)
+```
+
+## b
+
+O aumento de uma unidade da **população** aumenta em 0.07 as unidades vendidas (0.0007);
+
+Em **áreas urbanas**, as **vendas** são menores em 22 mil unidades (-0.0219)
+
+As **vendas** aumentam em até 1000 unidades em locais dentro dos **Estados Unidos** (1.0360)
+
+## c
+
+$$Sales = 6.7626 \ + 0.0007(Population)\ - 0.1341(Urban)\ +  1.0360(US)$$
+## d
+
+Pode-se rejeitar a hipótese nula para USYes.
+
+## e
+
+```{r}
+lm2 <- lm(Sales ~ US, data = data)
+summary(lm2)
+```
+
+## f
+
+O segundo modelo e o primeiro contam um $X^{2}$ muito pequeno, de apenas 0.02. O RSE do segundo modelo é um pouco menor.
+
+## g
+
+```{r}
+confint(lm2)
+```
+
+## h
+
+```{r}
+outlierTest(lm1)
+```
+
+________________________________
+# 11
+
+```{r}
+rm(list=ls())
+set.seed(1)
+x <- rnorm(100)
+y <- 2*x + rnorm(100)
+```
+
+## a
+
+```{r}
+lm1 <- lm(y ~ x -1)
+summary(lm1)
+```
+
+## b 
+
+```{r}
+lm2 <- lm(x ~ y -1)
+summary(lm2)
+```
+
+## c
+
+Pelo visto, obtemos os mesmo valores para a estatística-*t*, e consequentemente, para o p-valor. Em outras palavras, $y = 1.99x + \epsilon$ é igual a $x = 0.39y + \epsilon$.
+
+## d
+
+
+
+## e
+
+
+
+## f
+
+```{r}
+lm3 <- lm(y ~ x)
+summary(lm3)
+```
+
+```{r, echo = FALSE}
+lm4 <- lm(x ~ y)
+summary(lm4)
+```
+
+De novo, ambas estatísticas-t se assemelham.
+
+_______________________________________________________________________________
+# 12
+
+## a
+
+Se $\hat{\beta} = \frac{\sum_{i}x_{i}y_{i}}{\sum_{j}x_{j}^{2}}$ e $\hat{\beta^{'}} = \frac{\sum_{i}x_{i}y_{i}}{\sum_{j}y_{j}^{2}}$, então os coeficientes são iguais se:
+
+$$\sum_{j}x_{j}^{2} = \sum_{j}y_{j}^{2}$$
+
+## b
+
+```{r, echo=FALSE, message=FALSE, include=FALSE}
+set.seed(1)
+x <- 1:200
+y <- 2 * x + rnorm(200, sd = 0.13)
+
+lm5 <- lm(y ~ x)
+lm6 <- lm(x ~ y)
+
+stargazer(lm5, lm6, type = "latex")
+```
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & y & x \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ x & 2.000$^{***}$ &  \\ 
+  & (0.0001) &  \\ 
+  & & \\ 
+ y &  & 0.500$^{***}$ \\ 
+  &  & (0.00004) \\ 
+  & & \\ 
+ Constant & 0.018 & $-$0.009 \\ 
+  & (0.017) & (0.009) \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 200 & 200 \\ 
+R$^{2}$ & 1.000 & 1.000 \\ 
+Adjusted R$^{2}$ & 1.000 & 1.000 \\ 
+Residual Std. Error (df = 198) & 0.121 & 0.060 \\ 
+F Statistic (df = 1; 198) & 182,633,689.000$^{***}$ & 182,633,689.000$^{***}$ \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+## c
+
+```{r, include = FALSE, message = FALSE, echo = FALSE}
+set.seed(1)
+x <- rnorm(1000, mean=1, sd=0.1)
+y <- rnorm(1000, mean=1, sd=0.1)
+lm7 <- lm(y ~ x)
+lm8 <- lm(x ~ y)
+stargazer(lm7, lm8, type = "latex")
+```
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & y & x \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ x & 0.006 &  \\ 
+  & (0.032) &  \\ 
+  & & \\ 
+ y &  & 0.006 \\ 
+  &  & (0.031) \\ 
+  & & \\ 
+ Constant & 0.992$^{***}$ & 0.992$^{***}$ \\ 
+  & (0.032) & (0.032) \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 1,000 & 1,000 \\ 
+R$^{2}$ & 0.00004 & 0.00004 \\ 
+Adjusted R$^{2}$ & $-$0.001 & $-$0.001 \\ 
+Residual Std. Error (df = 998) & 0.104 & 0.104 \\ 
+F Statistic (df = 1; 998) & 0.041 & 0.041 \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+# 13
+
+## a
+
+```{r}
+rm(list=ls())
+
+set.seed(1)
+x <- rnorm(1000, 0, 1)
+```
+
+## b
+
+```{r}
+eps <- rnorm(1000, 0, 0.25)
+```
+
+## c
+
+
+```{r}
+y <- -1 + 0.5*x + eps  # eps=epsilon=e 
+length(y)
+```
+
+## d
+
+```{r}
+data = as.data.frame(cbind(x, y))
+data %>% 
+ggplot(aes(x = x, y = y)) + geom_point() + theme_hc()
+```
+
+Parece haver uma correlação positiva e linear entre as variáveis
+
+## e
+
+```{r}
+lm1 <- lm(y ~ x)
+summary(lm1)
+```
+
+Os parâmetros se assemelham.
+
+## f
+
+```{r}
+data %>%
+  ggplot(aes(x = x, y = y)) + geom_point() + 
+  geom_smooth(method = "lm") + geom_abline(aes(intercept = -1, slope = 0.5), col = "red") +
+  theme_hc()
+```
+
+## g
+
+```{r}
+lm2 <- lm(y ~ x + I(x^2))
+summary(lm2)
+```
+
+Não. Pelo contrário.
+
+## h
+
+```{r}
+eps2 <- rnorm(1000, 0, 0.1)
+y2 <- -1 + 0.5*x +eps2
+lm3 <- lm(y2 ~ x)
+summary(lm3)
+```
+
+```{r}
+data %>%
+  ggplot(aes(x = x, y = y2)) + geom_point() + 
+  geom_smooth(method = "lm") + geom_abline(aes(intercept = -1, slope = 0.5), col = "red") +
+  theme_hc()
+```
+
+## i
+
+```{r}
+eps3 <- rnorm(1000, sd=3)  # orig sd was 0.5
+y3 <- -1 + 0.5*x + eps3
+lm4 <- lm(y3 ~ x)
+summary(lm4)
+```
+
+```{r}
+data %>%
+  ggplot(aes(x = x, y = y3)) + geom_point() + 
+  geom_smooth(method = "lm") + geom_abline(aes(intercept = -1, slope = 0.5), col = "red") +
+  theme_hc()
+```
+
+O intervalo de confiança aumenta. O R² diminui consideravelmente, devido a grande variabilidade dos dados.
+
+## j
+
+```{r}
+confint(lm1)
+confint(lm3)
+confint(lm4)
+```
+
+Quanto menor a variância, menor o intervalo de confiança.
+
+_______________________________________________-
+# 14
+
+## a
+```{r}
+rm(list=ls())
+set.seed(1)
+x1 = runif(100)
+x2 = 0.5*x1 + rnorm(100)/10
+x3 = 2 + 2*x1 + 0.3*x2 + rnorm(100)
+```
+
+$\beta_{0} = 2$, $\beta_{1} = 2$, $\beta_{2} = 0.3$
+
+## b
+```{r}
+data = as.data.frame(cbind(x1, x2))
+cor(x1, x2)
+data %>% 
+ggplot(aes(x = x1, y = x2)) + geom_point() + theme_hc()
+```
+
+## c
+```{r}
+lm1 <- lm(x3 ~ x1 + x2)
+summary(lm1)
+```
+
+Coeficiente $\beta_{1}$ = 1.43 e Coefiencie $\beta_{2}$ = 1.0097. A hipótese nula pode ser rejeitada a 5% no primeiro caso, mas não no segundo.
+
+## d
+
+```{r}
+lm2 <- lm(x3 ~ x1)
+```
+
+## e
+
+```{r, include = FALSE}
+lm3 <- lm(x3 ~ x2)
+stargazer(lm2, lm3, type = "latex")
+```
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & \multicolumn{2}{c}{x3} \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ x1 & 1.976$^{***}$ &  \\ 
+  & (0.396) &  \\ 
+  & & \\ 
+ x2 &  & 2.900$^{***}$ \\ 
+  &  & (0.633) \\ 
+  & & \\ 
+ Constant & 2.112$^{***}$ & 2.390$^{***}$ \\ 
+  & (0.231) & (0.195) \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 100 & 100 \\ 
+R$^{2}$ & 0.202 & 0.176 \\ 
+Adjusted R$^{2}$ & 0.194 & 0.168 \\ 
+Residual Std. Error (df = 98) & 1.055 & 1.072 \\ 
+F Statistic (df = 1; 98) & 24.862$^{***}$ & 20.980$^{***}$ \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+Nos dois casos daria para rejeitar a hipótese nula
+
+## f
+Não. Isso acontece apenas pela multicolinearidade entre as variáveis x1 e x2.
+
+## g
+
+```{r}
+x1=c(x1,0.1)
+x2=c(x2,0.8)
+y=c(x3,6)
+```
+
+```{r}
+lm4 <- lm(y ~ x1 + x2)
+lm5 <- lm(y ~ x1)
+lm6 <- lm(y ~ x2)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm4)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm5)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm6)
+```
+
+________________________________________________________
+
+# 15
+
+```{r}
+rm(list=ls())
+boston = Boston
+attach(boston)
+```
+
+## a
+
+```{r, include = FALSE}
+lm.zn <- lm(crim~zn)
+lm.indus <- lm(crim~indus)
+lm.chas <- lm(crim~chas)
+lm.nox <- lm(crim~nox)
+lm.rm <- lm(crim~rm)
+lm.age <- lm(crim~age)
+lm.dis <- lm(crim~dis)
+lm.rad <- lm(crim~rad)
+lm.tax <- lm(crim~tax)
+lm.ptratio <- lm(crim~ptratio)
+lm.black <- lm(crim~black)
+lm.lstat <- lm(crim~lstat)
+lm.medv <- lm(crim~medv)
+stargazer(lm.zn, lm.indus, lm.chas, lm.nox, lm.rm, type = "latex")
+stargazer(lm.age, lm.dis, lm.rad, lm.tax, type = "latex")
+stargazer(lm.ptratio,lm.black, lm.lstat, lm.medv, type = "latex")
+```
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{5}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-6} 
+\\[-1.8ex] & \multicolumn{5}{c}{crim} \\ 
+\\[-1.8ex] & (1) & (2) & (3) & (4) & (5)\\ 
+\hline \\[-1.8ex] 
+ zn & $-$0.074$^{***}$ &  &  &  &  \\ 
+  & (0.016) &  &  &  &  \\ 
+  & & & & & \\ 
+ indus &  & 0.510$^{***}$ &  &  &  \\ 
+  &  & (0.051) &  &  &  \\ 
+  & & & & & \\ 
+ chas &  &  & $-$1.893 &  &  \\ 
+  &  &  & (1.506) &  &  \\ 
+  & & & & & \\ 
+ nox &  &  &  & 31.249$^{***}$ &  \\ 
+  &  &  &  & (2.999) &  \\ 
+  & & & & & \\ 
+ rm &  &  &  &  & $-$2.684$^{***}$ \\ 
+  &  &  &  &  & (0.532) \\ 
+  & & & & & \\ 
+ Constant & 4.454$^{***}$ & $-$2.064$^{***}$ & 3.744$^{***}$ & $-$13.720$^{***}$ & 20.482$^{***}$ \\ 
+  & (0.417) & (0.667) & (0.396) & (1.699) & (3.364) \\ 
+  & & & & & \\ 
+\hline \\[-1.8ex] 
+Observations & 506 & 506 & 506 & 506 & 506 \\ 
+R$^{2}$ & 0.040 & 0.165 & 0.003 & 0.177 & 0.048 \\ 
+Adjusted R$^{2}$ & 0.038 & 0.164 & 0.001 & 0.176 & 0.046 \\ 
+Residual Std. Error (df = 504) & 8.435 & 7.866 & 8.597 & 7.810 & 8.401 \\ 
+F Statistic (df = 1; 504) & 21.103$^{***}$ & 99.817$^{***}$ & 1.579 & 108.555$^{***}$ & 25.450$^{***}$ \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{5}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{4}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-5} 
+\\[-1.8ex] & \multicolumn{4}{c}{crim} \\ 
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\ 
+\hline \\[-1.8ex] 
+ age & 0.108$^{***}$ &  &  &  \\ 
+  & (0.013) &  &  &  \\ 
+  & & & & \\ 
+ dis &  & $-$1.551$^{***}$ &  &  \\ 
+  &  & (0.168) &  &  \\ 
+  & & & & \\ 
+ rad &  &  & 0.618$^{***}$ &  \\ 
+  &  &  & (0.034) &  \\ 
+  & & & & \\ 
+ tax &  &  &  & 0.030$^{***}$ \\ 
+  &  &  &  & (0.002) \\ 
+  & & & & \\ 
+ Constant & $-$3.778$^{***}$ & 9.499$^{***}$ & $-$2.287$^{***}$ & $-$8.528$^{***}$ \\ 
+  & (0.944) & (0.730) & (0.443) & (0.816) \\ 
+  & & & & \\ 
+\hline \\[-1.8ex] 
+Observations & 506 & 506 & 506 & 506 \\ 
+R$^{2}$ & 0.124 & 0.144 & 0.391 & 0.340 \\ 
+Adjusted R$^{2}$ & 0.123 & 0.142 & 0.390 & 0.338 \\ 
+Residual Std. Error (df = 504) & 8.057 & 7.965 & 6.718 & 6.997 \\ 
+F Statistic (df = 1; 504) & 71.619$^{***}$ & 84.888$^{***}$ & 323.935$^{***}$ & 259.190$^{***}$ \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{4}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{4}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-5} 
+\\[-1.8ex] & \multicolumn{4}{c}{crim} \\ 
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\ 
+\hline \\[-1.8ex] 
+ ptratio & 1.152$^{***}$ &  &  &  \\ 
+  & (0.169) &  &  &  \\ 
+  & & & & \\ 
+ black &  & $-$0.036$^{***}$ &  &  \\ 
+  &  & (0.004) &  &  \\ 
+  & & & & \\ 
+ lstat &  &  & 0.549$^{***}$ &  \\ 
+  &  &  & (0.048) &  \\ 
+  & & & & \\ 
+ medv &  &  &  & $-$0.363$^{***}$ \\ 
+  &  &  &  & (0.038) \\ 
+  & & & & \\ 
+ Constant & $-$17.647$^{***}$ & 16.554$^{***}$ & $-$3.331$^{***}$ & 11.797$^{***}$ \\ 
+  & (3.147) & (1.426) & (0.694) & (0.934) \\ 
+  & & & & \\ 
+\hline \\[-1.8ex] 
+Observations & 506 & 506 & 506 & 506 \\ 
+R$^{2}$ & 0.084 & 0.148 & 0.208 & 0.151 \\ 
+Adjusted R$^{2}$ & 0.082 & 0.147 & 0.206 & 0.149 \\ 
+Residual Std. Error (df = 504) & 8.240 & 7.946 & 7.664 & 7.934 \\ 
+F Statistic (df = 1; 504) & 46.259$^{***}$ & 87.740$^{***}$ & 132.035$^{***}$ & 89.486$^{***}$ \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{4}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
+
+Isoladamente, todas as variáveis são significativas, menos **chas**
+
+## b
+
+```{r}
+lm1 <- lm(crim ~ ., data = boston)
+summary(lm1)
+```
+
+Podemos rejeitar a hipótese nula a 5% para **zn, dis, rad, black, medv
+
+## c
+
+## d
+
+
