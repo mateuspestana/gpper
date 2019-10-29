@@ -1,0 +1,355 @@
+---
+title: "Classification"
+author: "Mateus C. Pestana"
+date: "15/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(ISLR, MASS, tidyverse, janitor, plotly, GGally, hrbrthemes, knitr, kableExtra, class, sjPlot)
+```
+### Exercícios Conceituais
+
+> 1 a 5 no caderno
+
+> 6. 
+
+$$ \frac{e^{-6+0.05 X_1 + X_2}}{1 + e^{-6+0.05 X_1 + X_2}}$$
+
+>> a.
+
+$$
+p(X) = \frac{e^{-6 + 0.05 \times 40 + 1 \times 3.5}}{1+e^{-6+0.05 \times 40 + 1 \times 3.5}}
+$$
+```{r}
+# a.
+exp(-6+0.05*40+3.5)/(1+exp(-6+0.05*40+3.5))  
+
+# b 
+(log(0.5/(1-0.5)) + 6 - 3.5)/0.05
+```
+
+> 7
+
+X = 4, 80% pagou dividendos...
+
+
+```{r}
+(0.8*exp(-1/(2*36)*(4-10)^2))/(0.8*exp(-1/(2*36)*(4-10)^2)+(1-0.8)*exp(-1/(2*36)*(4-0)^2))
+```
+
+> 8.  
+
+???
+
+> 9. 
+
+$$ 
+0,37 = \frac{P(x)}{1-P(x)}\\
+P(x) = 0,37 * (1-P(x)))\\
+P(x) = \frac{0,37}{1,37}
+$$ 
+```{r}
+0.37/1.37
+```
+
+>> B. 
+
+```{r}
+0.16/(1-0.16)
+```
+
+
+### Exercícios Aplicados
+    
+> 10.
+
+```{r}
+# 10.a
+data(Weekly)
+
+summary(Weekly)
+
+Weekly %>% 
+  dplyr::select(-Direction) %>% 
+  ggpairs(progress = F)+
+  theme_minimal()
+```
+
+É notável que há uma forte associação entre Volume e Ano (0.842).
+
+```{r}
+# 10.b
+
+ex10b <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+             data = Weekly, family = "binomial")
+summary(ex10b)
+```
+
+Lag2 é estatisticamente significante em uma direção positiva, apesar de um p-valor não tão baixo assim.
+
+```{r}
+# 10.c
+predict10b <- predict(ex10b, Weekly, type = "response")
+predict10b2 <- ifelse(predict10b > 0.5, "Up", "Down")
+
+table(predict10b2, Weekly$Direction) -> table10c
+
+kable(table10c) %>% 
+  kable_styling(bootstrap_options = c("condensed", "hover", "striped"),
+                full_width = F)
+
+```
+A matriz de confusão nos mostra quantos foram preditos para Down e Up e quantos foram observados para Down e Up. Com isso, podemos perceber que o modelo acerta mais quando a direção é pra cima, pois 
+```{r}
+mean(predict10b2 == Weekly$Direction) # 0.561
+
+table10c[1,1]/(table10c[1,1]+table10c[1,2]) < table10c[2,2]/(table10c[2,1]+table10c[2,2])
+
+# 0,52 < 0,56
+
+```
+
+
+```{r}
+# 10.d
+
+weektrain <- Weekly %>% 
+  filter(Year %in% (1990:2008))
+
+difweektrain <- Weekly %>% 
+  filter(!Year %in% (1990:2008))
+
+ex10d <- glm(Direction ~ Lag2, data = weektrain, family = "binomial")
+ex10pred <- predict(ex10d, difweektrain, type = "response")
+
+ex10pred2 <- ifelse(ex10pred > 0.5, "Up", "Down")
+
+table(ex10pred2, difweektrain$Direction) -> table10d
+
+table10d[1,1]/(table10d[1,1]+table10d[1,2]) # 0.64
+table10d[2,2]/(table10d[2,1]+table10d[2,2]) # 0.62
+
+mean(ex10pred2 == difweektrain$Direction) # 0.625
+
+
+```
+O modelo acerta mais no Down do que no Up. 
+
+
+```{r}
+# 10.e (Usar LDA)
+
+ex10e <- lda(Direction ~ Lag2, data = weektrain)
+ex10epred <- predict(ex10e, difweektrain)$class
+
+table(ex10epred, difweektrain$Direction)
+mean(ex10epred == difweektrain$Direction)
+
+```
+
+```{r}
+# 10.f (Usar QDA)
+
+ex10f <- qda(Direction ~ Lag2, data = weektrain)
+ex10fpred <- predict(ex10f, difweektrain)$class
+
+table(ex10fpred, difweektrain$Direction)
+mean(ex10fpred == difweektrain$Direction)
+```
+
+
+```{r}
+# 10.g  (KNN)
+matrix_TX <- as.matrix(weektrain$Lag2)
+matrix_DX <- as.matrix(difweektrain$Lag2)
+ex10g <- knn(matrix_TX, matrix_DX, weektrain$Direction, k = 1)
+table(ex10g, difweektrain$Direction)
+mean(ex10g  == difweektrain$Direction)
+```
+
+h) Percebe-se que o LDA e o GLM são os melhores (ambos com 0.625 de acurácia)
+
+i)
+
+> 11)
+
+```{r}
+data(Auto)
+
+Auto <- Auto %>% 
+  mutate(mpg01 = ifelse(mpg > median(mpg), 1, 0))
+  
+Auto %>% 
+  select(-name) %>% 
+  ggpairs(progress=F)+
+  theme_minimal()
+```
+
+> Todas as variáveis oferecem alta correlação, tanto positiva quanto negativa, com mpg01. As mais fracas são a aceleração, com 0.347, year, com correlação 0.43,e origem, com 0.51. 
+
+```{r}
+# 11.c
+
+treino11 <- sample_frac(Auto, size = 0.7, replace = F)
+teste11 <- anti_join(Auto, treino11)
+```
+
+```{r}
+#  11.d - test  error
+
+ex11d <- lda(mpg01 ~ cylinders + displacement + horsepower + weight, data = treino11)
+predex11d <- predict(ex11d, teste11)$class
+
+table(predex11d, teste11$mpg01)
+
+mean(predex11d != teste11$mpg01) # Erro 0.067
+```
+
+```{r}
+# 11.e
+
+ex11e <- qda(mpg01 ~ cylinders + displacement + horsepower + weight, data = treino11)
+predex11e <- predict(ex11e, teste11)$class
+
+table(predex11e, teste11$mpg01)
+
+mean(predex11e != teste11$mpg01) # Erro 0.076
+```
+
+
+```{r}
+# 11.f
+
+ex11f <- glm(mpg01 ~ cylinders + displacement + horsepower + weight, data = treino11)
+predex11f <- predict(ex11f, teste11, type  = "response")
+
+predex11f2 <- ifelse(predex11f > 0.5, 1, 0)
+
+table(predex11f2, teste11$mpg01)
+
+mean(predex11f2 != teste11$mpg01) # Erro 0.067, igual ao LDA
+```
+
+```{r}
+# 11.g
+
+matrix_treino11 <- cbind(treino11$cylinders, treino11$displacement, 
+            treino11$horsepower, treino11$weight)
+
+matrix_teste11 <- cbind(teste11$cylinders, teste11$displacement, 
+            teste11$horsepower, teste11$weight)
+
+ex11g <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 1)
+table(ex11g, teste11$mpg01)
+
+mean(ex11g != teste11$mpg01) # Erro 0.14
+
+ex11g50 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 50)
+table(ex11g50, teste11$mpg01)
+
+mean(ex11g50 != teste11$mpg01) # Erro 0.10
+
+ex11g100 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 100)
+table(ex11g100, teste11$mpg01)
+
+mean(ex11g100 != teste11$mpg01) # Erro 0.093
+
+
+ex11g200 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 200)
+table(ex11g200, teste11$mpg01)
+
+mean(ex11g200 != teste11$mpg01) # Erro 0.093 = IGUAL! Vamos diminuir.
+
+ex11g70 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 70)
+table(ex11g70, teste11$mpg01)
+
+mean(ex11g70 != teste11$mpg01) # Erro 0.093 = Ainda igual! Diminuir mais.
+
+ex11g25 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 25)
+table(ex11g25, teste11$mpg01)
+
+mean(ex11g25 != teste11$mpg01) # Erro 0.093 = Mesma coisa.
+
+ex11g10 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 10)
+table(ex11g10, teste11$mpg01)
+
+mean(ex11g10 != teste11$mpg01) # Erro 0.093 = Igual
+
+ex11g3 <- knn(matrix_treino11, matrix_teste11, treino11$mpg01, k = 3)
+table(ex11g3, teste11$mpg01)
+
+mean(ex11g3 != teste11$mpg01) # Erro 0.1016
+```
+
+
+> 12. 
+
+```{r}
+# 12.a
+Power <- function(x = 2){
+  print(x^3)
+} 
+
+Power()
+
+# 12.b
+
+Power2 <- function(x, y){
+  print(x^y)
+}
+
+Power2(5, 2)
+
+# 12.c 
+conj <- tibble(x = c(10, 8, 131), y = c(3, 17, 13))
+Power2(conj$x, conj$y)
+
+# 12.d
+
+Power3 <- function(x, y){
+  return(x^y)
+}
+
+teste <- Power3(5,2)
+teste
+
+# 12.e
+
+df <- tibble(x = 1:10, y = Power3(x,2))
+
+df %>% 
+  ggplot(aes(x, y))+
+  geom_line(color = "steelblue", size = 1.1)+
+  geom_point(size = 1.5)+
+  scale_x_continuous(breaks = seq(1,10, 1))+
+  scale_y_log10()+
+  theme_ipsum_tw()+
+  labs(title = "x / log(Power3(x,2))",
+       caption = "GPPER", 
+       x = "X",
+       y = "Log de x^2")
+
+```
+
+```{r}
+#  12.f
+
+PlotPower <- function(x, y = 3){
+  df <- tibble(a = x, b = Power3(x, y))
+  ggplot(df, aes(a, b))+
+  geom_line(color = "steelblue", size = 1.1)+
+  geom_point(size = 1.5)+
+  scale_x_continuous(limits = c(first(x),last(x)*1.05))+
+  scale_y_log10()+
+  theme_ipsum_tw()+
+  labs(title = paste0("x / log(Power3(x,",y,"))"),
+       caption = "GPPER", 
+       x = "X",
+       y = paste0("Log de x^",y))
+}
+
+PlotPower(1:30)
+```
+
