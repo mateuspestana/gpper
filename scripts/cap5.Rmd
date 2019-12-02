@@ -1,0 +1,312 @@
+---
+title: "Capítulo 5"
+author: "Mateus C. Pestana"
+date: "19/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(ISLR, boot, tidyverse, hrbrthemes, MASS)
+set.seed(1)
+```
+
+## Lab
+
+### 5.3.1 - Validation Set
+
+```{r}
+train <- sample(392, 196)
+
+lm.fit <-  lm(mpg ~ horsepower ,data = Auto, subset = train)
+
+attach(Auto)
+
+lm.fit2 <- lm(mpg ~ poly(horsepower, 2), data = Auto, subset = train)
+
+lm.fit3 <- lm(mpg ~ poly(horsepower, 3), data = Auto, subset = train)
+
+lm.fit4 <- lm(mpg ~ poly(horsepower, 4), data = Auto, subset = train)
+
+mse1 <- mean((mpg - predict(lm.fit, Auto))[-train]^2)
+mse2 <- mean((mpg - predict(lm.fit2, Auto))[-train]^2)
+mse3 <- mean((mpg - predict(lm.fit3, Auto))[-train]^2)
+mse4 <- mean((mpg - predict(lm.fit4, Auto))[-train]^2)
+
+paste0("O MSE para o modelo simples é ", round(mse1, 2), "; Para o quadrático, ", round(mse2,2), "; Para o polinômio de grau 3, ", round(mse3, 2), "; e para o polinômio de quarta potência, ", round(mse4, 2),".")
+
+```
+
+### 5.3.2 - LOOCV 
+
+```{r}
+glm.fit <- glm(mpg ~ horsepower, data = Auto)
+
+cv.err <- cv.glm(Auto, glm.fit)
+
+cv.err$delta
+
+cv.error  <- rep(0,5)
+
+system.time(for (i in 1:5) {
+  glm.fit <- glm(mpg ~ poly(horsepower, i), data  = Auto)
+  cv.error[i] <- cv.glm(Auto, glm.fit)$delta[1]
+})
+
+cv.error
+
+cv.error <- as.data.frame(cv.error)
+
+ggplot(cv.error, aes(y = cv.error, x = 1:length(cv.error)))+
+  geom_line(color = "red", size = 1.2)+
+  geom_point()+theme_ipsum_tw()+labs(title = "Cross Validation Error", x = "Grau do polinômio", y  = "Erro")
+```
+
+### 5.3.3 - k-Fold CV
+
+```{r}
+set.seed(17)
+cv.error.10 <- rep(0,10)
+
+system.time(for (i in 1:10) {
+  glm.fit <- glm(mpg ~ poly(horsepower, i), data  = Auto)
+  cv.error.10[i] <- cv.glm(Auto, glm.fit, K = 10)$delta[1]
+})
+
+cv.error.10
+
+cv.error.10 <- as.data.frame(cv.error.10)
+
+ggplot(cv.error.10, aes(y = cv.error.10, x = 1:length(cv.error.10)))+
+  geom_line(color = "orange", size = 1.2)+
+  geom_point()+theme_ipsum_tw()+labs(title = "k-Fold", x = "Grau do polinômio", y  = "Erro")
+```
+
+### Bootstrap 
+
+```{r}
+alpha.fn <- function(data, index) {
+  X <- data$X[index]
+  Y <- data$Y[index]
+  return((var(Y)-cov(X, Y))/(var(X)+var(Y)-2*cov(X,Y)))
+}
+
+alpha.fn(Portfolio, 1:100)
+
+set.seed(1)
+alpha.fn(Portfolio, sample(100, 100, replace = T))
+
+boot(Portfolio, alpha.fn, R = 1000)
+
+boot.fn <- function(data, index){
+  return(coef(lm(mpg ~ horsepower, data = data, subset = index)))
+}
+
+boot.fn(Auto, 1:392)
+
+set.seed(1)
+
+boot.fn(Auto, sample(392, 392, replace = T))
+
+boot(Auto, boot.fn, 1000)
+
+boot.fn <- function(data, index){
+  coefficients(lm(mpg ~ horsepower + I(horsepower^2), data = data, subset = index))
+}
+boot(Auto, boot.fn, 1000)
+
+summary(lm(mpg ~ horsepower + I(horsepower^2), data = Auto))$coef
+```
+
+
+## Exercícios
+
+### Conceituais
+
+- 1)
+
+- 2) 
+  - a) todas as observações tem igual chance de serem escolhidas ($1-\frac{1}{n}$)
+  - b) idem.
+  - c) :
+  $$(1 - \frac{1}{n})_1 \times (1 - \frac{1}{n})_2 \times (1 - \frac{1}{n})_3 ... (1 - \frac{1}{n})_n = (1 - \frac{1}{n})^n$$
+  - d) $(1 - \frac{1}{5})^5 =$  `r 1-(1 - 1/5)^5`
+  - e) $(1 - \frac{1}{100})^{100}=$ `r 1-(1-1/100)^100`
+  - f) $(1 - \frac{1}{1000})^{1000} =$ `r 1-(1-1/1000)^1000`
+  - g)
+  
+  
+```{r}
+funcpr <- function(x) {
+  return(1 - (1-1/x)^x)
+}
+x <- 1:100000
+
+ggplot(data = data.frame(x), aes(x = x))+
+  stat_function(fun = funcpr)+
+  theme_ipsum_tw()+
+  labs(1-(1-1/x)^x)
+```
+   
+   - h)
+   
+```{r}
+store=rep(NA,10000)
+for(i in 1:10000){
+  store[i]=sum(sample(1:100,rep=TRUE)==4)>0
+}
+
+mean(store) 
+# Próximo de...
+1-(1-1/100)^{100}
+```
+   
+- 3)
+  - a) Divide as observações em *k* grupos de tamanho igual, ficando o primeiro grupo como set de validação e os demais como *training set*. O MSE é calculado em cada caso, que é repetido *k* vezes, e a média de todos os erros é obtida.
+  - b) 
+    - I) No validation set, somente uma parte do banco (o subset) é utilizada, superestimando o erro (já que no subset o *n* é sempre menor), causando mais viés, além do erro no teste ter mais variações (a depender do subset).
+    - II) O LOOCV demanda mais poder computacional, mas possui menos viés. 
+  
+- 4) A partir do *bootstrapping*, é possível re-amostrar um banco N vezes estimando a resposta Y em cada uma das amostras e verificamos o desvio-padrão dos estimadores.
+
+### Aplicados
+
+- 5) 
+```{r}
+mod5a <- glm(default ~ income + balance, data = Default,  family = "binomial")
+
+treino  <- sample(nrow(Default), nrow(Default)*0.5)
+
+mod5b <- glm(default ~ income + balance, data =  Default, family = "binomial", subset = treino)
+
+prob5 <- predict(mod5b, newdata = Default[-treino,], type = "response")
+
+pred5 <- rep("N", length(prob5))
+pred5 <- ifelse(prob5 > 0.5, 1, 0)
+
+table(pred5, Default[-treino,]$default)
+
+
+mean(Default[-treino,]$default != pred5)
+```
+
+  - c)
+  - d)
+  
+- 6) Os erros são próximos
+```{r}
+summary(mod5a)
+
+boot.fn <- function(df, treino) {
+  return(coef(glm(default ~ income + balance, data=df, family=binomial, subset=treino)))
+}
+
+boot(Default, boot.fn, R = 1000)
+```
+
+- 7)
+```{r}
+mod7 <- glm(Direction ~ Lag1 + Lag2, data=Weekly, family="binomial")
+
+summary(mod7)
+
+mod7b <- glm(Direction ~ Lag1 + Lag2, data=Weekly[-1,], family=binomial)
+summary(mod7b)
+
+ifelse(predict(mod7b,Weekly[1,],type='response')>0.5,'Up','Down') 
+
+Weekly[1,9]
+
+loocv.err <- rep(0,nrow(Weekly))
+for (i in 1:nrow(Weekly)) {
+  modglm7d<- glm(Direction ~ Lag1 + Lag2, data=Weekly[-i,], family=binomial)
+  predglm7d <- ifelse(predict(modglm7d, Weekly[1,], type="response")>0.5, "Up", "Down")
+  loocv.err[i] <- ifelse(Weekly[i,]$Direction==predglm7d, 0, 1)
+}
+
+head(loocv.err,10)
+
+mean(loocv.err)
+```
+
+- 8)
+
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- x - 2 * x^2 + rnorm(100)
+```
+  - a) n é 100 e p é 2. $Y = X - 2 \times X^2 + \varepsilon$
+  
+```{r}
+xy <- data.frame(x, y)
+
+ggplot(xy, aes(x, y))+
+  geom_point(color = "skyblue3")+
+  theme_ipsum_tw()+
+  labs(title = "X | Y")
+```
+  
+Curva quadrática negativa.
+
+```{r}
+set.seed(999)
+
+cv.errorex  <- rep(0,4)
+for (i in 1:4) {
+  glm.fit <- glm(y ~ poly(x, i), data  = xy)
+  cv.errorex[i] <- cv.glm(xy, glm.fit)$delta[1]
+}
+
+cv.errorex
+
+set.seed(666)
+for (i in 1:4) {
+  glm.fit <- glm(y ~ poly(x, i), data  = xy)
+  cv.errorex[i] <- cv.glm(xy, glm.fit)$delta[1]
+}
+
+cv.errorex
+```
+
+Resultados iguais.
+
+  - e) o $x^2$, já que a curva é visivelmente quadrática.
+  
+- 9) 
+```{r}
+mean(Boston$medv) -> mediamedv
+
+erropad <- sd(Boston$medv) / sqrt(nrow(Boston))
+erropad
+
+boot.fn <- function(data, index) {
+    media <- mean(data[index])
+    return(media)
+}
+boot(Boston$medv, boot.fn, 1000)
+
+22.53 - 2 * 0.3958691 # 21.73826
+22.53 + 2 * 0.3958691 # 23.32174
+
+t.test(Boston$medv)
+
+mediana <- median(Boston$medv)
+mediana
+
+boot.fn.mediana <- function(data, index) {
+    mediana <- median(data[index])
+    return(mediana)
+}
+
+boot(Boston$medv, boot.fn.mediana, 1000)
+
+quantile(Boston$medv, 0.1)
+
+boot.fn.10q <- function(data, index) {
+    q10 <- quantile(data[index],  0.1)
+    return(q10)
+}
+boot(Boston$medv, boot.fn.10q, 1000)
+```
+
